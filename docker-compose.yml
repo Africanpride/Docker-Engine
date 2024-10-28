@@ -1,33 +1,101 @@
 services:
   db:
     image: mariadb:11
+    restart: always
     volumes:
-      - "db-data:/var/lib/mysql"
+      - ./db-data:/var/lib/mysql
+      - ./config/my.cnf:/etc/my.cnf
     environment:
-      MYSQL_ROOT_PASSWORD: wordpress
-      MYSQL_DATABASE: wordpress
-      MYSQL_USER: wordpress
-      MYSQL_PASSWORD: wordpress
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
 
   wordpress:
+    container_name: astar
     depends_on:
       - db
     build: ./
     volumes:
-      - "site-data:/var/www/wp-content"
+      - ./site-data:/var/www/wp-content
     ports:
       - "8123:80"
     environment:
       DB_HOST: db
-      DB_PASSWORD: wordpress
-      DB_NAME: wordpress
-      DB_USER: wordpress
-      WORDPRESS_SITE_URL: http://localhost:8123
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_NAME: ${MYSQL_DATABASE}
+      DB_USER: ${MYSQL_USER}
+      WORDPRESS_SITE_URL: ${WORDPRESS_SITE_URL}
       FS_METHOD: direct
+
       # For debugging only:
       #WP_DEBUG: "true"
       #WP_DEBUG_DISPLAY: "true"
 
+  # Adminer
+  adminer:
+    image: adminer
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - 8124:8080
+    environment:
+      ADMINER_DESIGN: "pepa-linha"
+      ADMINER_DEFAULT_SERVER: mariadb
+
+#   # redis
+#   redis:
+#     image: redis:alpine
+#     restart: unless-stopped
+#     ports:
+#       - "6378:6379"
+
+#   # redis commander
+#   redis-commander:
+#     hostname: redis-commander
+#     image: rediscommander/redis-commander:latest
+#     restart: always
+#     depends_on:
+#       - redis
+#     environment:
+#       - REDIS_HOST=redis
+#       - REDIS_PORT=6378
+#     ports:
+#       - 8126:8081
+# volumes:
+#   db-data:
+#     #Adminer
+#     adminer:
+#       image: adminer
+#       restart: always
+#       depends_on:
+#         - db
+#       ports:
+#         - 8124:8080
+#       environment:
+#         ADMINER_DESIGN: "pepa-linha"
+#         ADMINER_DEFAULT_SERVER: mariadb
+
+#     # redis
+#     redis:
+#       image: redis:alpine
+#       restart: unless-stopped
+#       ports:
+#         - "6378:6379"
+
+#     # redis commander
+#     redis-commander:
+#       hostname: redis-commander
+#       image: rediscommander/redis-commander:latest
+#       restart: always
+#       depends_on:
+#         - redis
+#       environment:
+#         - REDIS_HOST=redis
+#         - REDIS_PORT=6378
+#       ports:
+#         - 8126:8081
 volumes:
   db-data:
   site-data:
